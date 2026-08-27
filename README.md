@@ -6,7 +6,7 @@ A simple, clean, and complete **Retrieval-Augmented Generation (RAG)** applicati
 
 ## 1. Project Overview
 
-The **Multi-Document Research Assistant** lets users upload multiple PDF files (e.g., textbook chapters, research papers, reports) and query them through a natural language chat interface. Rather than relying on a general-purpose Large Language Model's parametric memory (which can hallucinate), this system extracts text from the uploaded PDFs, indexes it in a local vector database, retrieves relevant passages, and forces the LLM to generate answers strictly grounded in the retrieved facts.
+The **Multi-Document Research Assistant** lets users upload multiple PDF files (e.g., textbook chapters, research papers, resumes, reports) and query them through a natural language chat interface. Rather than relying on a general-purpose Large Language Model's parametric memory (which can hallucinate), this system extracts text from the uploaded PDFs, indexes it in a local vector database, retrieves relevant passages, and forces the LLM to generate answers strictly grounded in the retrieved facts.
 
 ---
 
@@ -29,7 +29,7 @@ RAG eliminates model hallucinations, keeps responses up to date, and provides tr
 User Question ──> Similarity Search (top_k) ──> Context Snippets ─────────────────┘
                                                        │
                                                        ▼
-                                     OpenAI LLM + Strict Grounding Prompt
+                                   Groq LLM (Llama 3.3) + Grounding Prompt
                                                        │
                                                        ▼
                                         Answer + Source & Page Citations
@@ -40,7 +40,7 @@ User Question ──> Similarity Search (top_k) ──> Context Snippets ──�
 3. **Embeddings**: `SentenceTransformers` (`all-MiniLM-L6-v2`) converts each text chunk into a 384-dimensional dense floating-point vector representation.
 4. **Vector Storage**: `ChromaDB` stores the vectors, text content, and metadata locally (`data/chroma`). Duplicate chunk hashing prevents redundant indexing.
 5. **Retrieval**: When the user asks a question, the question is embedded and compared against stored chunk vectors using cosine distance similarity.
-6. **LLM Generation**: The top-K retrieved chunks are sent to `OpenAI` (`gpt-4o-mini`) alongside a system prompt requiring answers to be strictly grounded in the retrieved context. If insufficient evidence exists, it returns a standard fallback response.
+6. **LLM Generation**: The top-K retrieved chunks are sent to `Groq API` (`Llama 3.3` / `groq/compound`) or `OpenAI` alongside a system prompt requiring answers to be strictly grounded in the retrieved context. If insufficient evidence exists, it returns a standard fallback response.
 7. **Citations**: Page and document citations are formatted and displayed directly below the generated answer.
 
 ---
@@ -49,11 +49,12 @@ User Question ──> Similarity Search (top_k) ──> Context Snippets ──�
 
 - **Python 3.11+**
 - **Streamlit**: Web frontend and interactive chat interface.
-- **PyMuPDF (`fitz`)**: Fast PDF text and page extraction.
+- **PyMuPDF (`pymupdf`)**: Fast PDF text and page extraction.
 - **LangChain (`langchain-text-splitters`)**: Recursive text chunking.
 - **Sentence-Transformers (`all-MiniLM-L6-v2`)**: Local semantic text embeddings.
 - **ChromaDB**: Local persistent vector database.
-- **OpenAI API (`openai`)**: LLM text generation (`gpt-4o-mini`).
+- **Groq API (`groq`)**: High-speed free LLM text generation (`Llama 3.3` / `groq/compound`).
+- **OpenAI API (`openai`)**: Optional fallback LLM.
 - **python-dotenv**: Environment variable management.
 - **pytest**: Automated testing framework.
 
@@ -66,7 +67,7 @@ multi-document-rag/
 │
 ├── app.py                  # Streamlit UI & Session State controller
 ├── requirements.txt        # Python package dependencies
-├── .env                    # Environment variables (OpenAI API key)
+├── .env                    # Environment variables (Groq / OpenAI API keys)
 ├── .env.example            # Environment template file
 ├── .gitignore              # Files excluded from git
 ├── README.md               # Documentation & setup guide
@@ -81,7 +82,7 @@ multi-document-rag/
 │   ├── embeddings.py       # SentenceTransformers embedding generation
 │   ├── vector_store.py     # ChromaDB vector collection management & deduplication
 │   ├── retriever.py        # Similarity search retriever
-│   └── generator.py        # Grounded OpenAI answer generation & citations
+│   └── generator.py        # Grounded Groq / OpenAI answer generation & citations
 │
 └── tests/
     └── test_basic.py       # Pytest unit & pipeline verification tests
@@ -93,7 +94,8 @@ multi-document-rag/
 
 1. **Clone or Navigate to the Project Directory**:
    ```bash
-   cd C:\Users\ashuk\Downloads\rag_project
+   git clone https://github.com/Ashutoshe4678/Multi-Document-Research-Assistant-RAG-.git
+   cd Multi-Document-Research-Assistant-RAG-
    ```
 
 2. **Create and Activate a Virtual Environment** *(recommended)*:
@@ -119,10 +121,12 @@ multi-document-rag/
    cp .env.example .env
    ```
 
-2. Open `.env` and add your OpenAI API key:
+2. Open `.env` and add your **Groq API Key** (100% FREE from [console.groq.com/keys](https://console.groq.com/keys)):
    ```ini
-   OPENAI_API_KEY=sk-proj-your_actual_openai_api_key_here
+   GROQ_API_KEY=gsk_your_groq_api_key_here
    ```
+
+*(Optional: You can also set `OPENAI_API_KEY=sk-...` if using OpenAI).*
 
 ---
 
